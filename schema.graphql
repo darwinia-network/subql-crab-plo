@@ -1,0 +1,100 @@
+type Block @entity {
+  id: ID!
+
+  number: BigInt
+  timestamp: Date
+  parentHash: String
+  specVersion: Int
+
+  extrinsics: [Extrinsic] @derivedFrom(field: "block")
+  events: [Event] @derivedFrom(field: "block")
+}
+
+type Extrinsic @entity {
+  id: ID!
+
+  method: String
+  section: String
+  args: String
+  signer: Account #create relation to account
+  nonce: BigInt
+  timestamp: Date
+  signature: String
+  tip: BigInt
+  isSigned: Boolean
+  isSuccess: Boolean
+
+  block: Block #create relation to block
+  events: [Event] @derivedFrom(field: "extrinsic")
+}
+
+type Event @entity {
+  id: ID!
+
+  index: Int!
+  section: String!
+  method: String!
+  data: String!
+  timestamp: Date
+
+  block: Block #create relation to block
+  extrinsic: Extrinsic #create relation to extrinsic
+}
+
+type Account @entity {
+  id: ID!
+
+  transferTotalCount: Int
+  contributedTotalCount: Int
+  contributedTotal: BigInt
+
+  extrinsics: [Extrinsic] @derivedFrom(field: "signer")
+}
+
+type CrowdloanMemo @entity {
+  id: ID!
+
+  who: String!
+  paraId: Int!
+  memo: String
+  timestamp: Date
+
+  block: Block #create relation to block
+}
+
+type CrowdloanWhoStatistics @entity {
+  id: ID! # memo
+
+  user: String
+  totalBalance: BigInt!
+  totalPower: BigInt!
+
+  contributors: [CrowdloanContributed] @derivedFrom(field: "whoStatistics")
+}
+
+type CrowdloanReferStatistics @entity {
+  id: ID!
+
+  user: String!
+  totalBalance: BigInt!
+  totalPower: BigInt!
+
+  contributors: [CrowdloanContributed] @derivedFrom(field: "referStatistics")
+}
+
+type CrowdloanContributed @entity {
+  id: ID!
+
+  who: String! # 被邀请人
+  refer: String # 邀请人 = memo
+  balance: BigInt!
+  powerWho: BigInt! # balance * (block < BLOCK ? 1.2 : 1.0) * (refer == nil ? 1.0 : 1.05)
+  powerRefer: BigInt # balance * (block < BLOCK ? 1.2 : 1.0) * (refer == nil ? 0 : 0.05)
+
+  timestamp: Date
+  paraId: Int!
+
+  whoStatistics: CrowdloanWhoStatistics
+  referStatistics: CrowdloanReferStatistics 
+  block: Block
+}
